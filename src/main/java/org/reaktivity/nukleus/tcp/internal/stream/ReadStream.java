@@ -58,6 +58,7 @@ final class ReadStream
     private MessageConsumer correlatedThrottle;
     private long correlatedStreamId;
     private boolean resetRequired;
+    private RegionsManager regionsManager;
 
     ReadStream(
         MessageConsumer target,
@@ -77,6 +78,7 @@ final class ReadStream
         this.countBytes = countBytes;
         this.transferBaseAddress = helper.acquireReadMemory();
         this.transferCapacity = helper.readMemoryCapacity();
+        regionsManager = new RegionsManager();
     }
 
     int onNotifyReadable(
@@ -130,7 +132,7 @@ final class ReadStream
                                               .streamId(targetId));
             }
 
-            helper.doTcpTransfer(target, targetId, 0x00, regions);
+            helper.doTcpTransfer(target, targetId, 0x00, regions, regionsManager);
 
             countFrames.getAsLong();
             countBytes.accept(bytesRead);
@@ -297,5 +299,15 @@ final class ReadStream
             ackIndexHighMark = ackIndexCandidate;
             ackIndexProgress = 0;
         }
+
+RegionFW r = region;
+//System.out.printf(
+//"TCP ACK: [%d] address=%8d length=%8d ackIndex=%8d ackIndex+ackProgess=%8d ackHighMark=%8d readIndex=%8d unacked=%8d\n",
+//r.streamId(), r.address(), r.length(), ackIndex, ackIndex+ackIndexProgress, ackIndexHighMark, readIndex,
+//(readIndex-ackIndex));
+        regionsManager.remove(r.address(), r.length());
+        regionsManager.print();
+int f = 0;
+
     }
 }

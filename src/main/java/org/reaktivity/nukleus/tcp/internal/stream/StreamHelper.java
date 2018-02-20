@@ -233,7 +233,8 @@ final class StreamHelper
         MessageConsumer stream,
         long streamId,
         int flags,
-        Consumer<ListFW.Builder<RegionFW.Builder, RegionFW>> regions)
+        Consumer<ListFW.Builder<RegionFW.Builder, RegionFW>> regions,
+        RegionsManager mgr)
     {
         TransferFW transfer = transferRW.wrap(writeBuffer, 0, writeBuffer.capacity())
                 .streamId(streamId)
@@ -241,6 +242,16 @@ final class StreamHelper
                 .regions(regions)
                 .build();
 
+        transfer.regions().forEach(r ->
+        {
+//System.out.printf(
+//"TCP TRA: [%d] address=%8d length=%8d ackIndex=%8d ackIndex+ackProgess=%8d ackHighMark=%8d readIndex=%8d unacked=%8d\n",
+//r.streamId(), r.address(), r.length(), ackIndex, ackIndex+ackIndexProgress, ackIndexHighMark, readIndex,
+//(readIndex-ackIndex));
+
+            mgr.add(r.address(), r.length());
+        });
+mgr.print();
         stream.accept(transfer.typeId(), transfer.buffer(), transfer.offset(), transfer.sizeof());
     }
 
